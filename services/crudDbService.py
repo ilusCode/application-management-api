@@ -91,40 +91,6 @@ async def deleteAppById(app_id: str) -> dict:
 	else:
 		raise IcException(statusCode=202, messageDetail=ERR_02)
 
-async def updateAppById(app_id: str, payload: updateRequest) -> dict:
-	if not app_id:
-		raise IcException(statusCode=400, messageDetail=ERR_01)
-
-	try:
-		object_id = ObjectId(app_id)
-	except (InvalidId, TypeError):
-		raise IcException(statusCode=400, messageDetail=ERR_01)
-
-	db = connect_to_mongodb()
-	collection = db[os.getenv("MONGODB_COLLECTION")]
-	collectionChanges = db[os.getenv("MONGODB_COLLECTION_CHANGES")]
-
-	print(f"Updating application with ID: {app_id} and data: {payload}")
-
-	query = {"_id": object_id}
-
-	result = list(collection.find(query))
-	print(f"Number of applications before update: {len(result)}")
-
-	if len(result) != 0:
-		for change in payload.changes:
-			print("changeType - "+ change.type.name)
-			if change.type.name == "NAME":
-				#result = collection.update_one({"_id": object_id}, {"$set": {"name": change.value}})
-				print("ok")
-			else:
-				raise IcException(statusCode=400, messageDetail="Operation not valid")
-					
-		print(f"Number of documents modified: {result.modified_count}")
-		return {"app_id": app_id, "updated_data": changeType, "message": "App updated successfully."}
-	else:
-		raise IcException(statusCode=202, messageDetail=ERR_02)
-
 async def newApplication(payload: appDetailsRequest) -> dict:
 	print("Creating new application: name=%s, url=%s", payload.data.name, payload.data.url)
 	db = connect_to_mongodb()
@@ -140,4 +106,4 @@ async def newApplication(payload: appDetailsRequest) -> dict:
 
 		collection.update_one({"_id": result.inserted_id}, {"$push": {"images": str(rImage.inserted_id)}})
 		collection.update_one({"_id": result.inserted_id}, {"$push": {"changes": str(rChange.inserted_id)}})
-		return { "statusCode": "000" }
+		return { "statusCode": "Ok", "_id": str(result.inserted_id)}
