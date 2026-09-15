@@ -13,6 +13,7 @@ from exception.IcException import IcException
 from utils.Constants import ERR_01, ERR_02
 from model.UpdateRequest import updateRequest
 from model.changeType import changeType
+from model.appDetailsRequest import appDetailsRequest
 
 load_dotenv()
 
@@ -83,7 +84,8 @@ async def deleteAppById(app_id: str) -> dict:
 
 	if len(result) != 0:
 		result = collection.update_one({"_id": object_id}, {"$set": {"active": False}})
-		collectionChanges.insert_one({"applicationId": str(object_id), "changeType": "delete", "datetime": datetime.utcnow()})
+		rChange = collectionChanges.insert_one({"applicationId": str(object_id), "changeType": "delete", "datetime": datetime.utcnow(), "description": "delete App"})
+		collection.update_one({"_id": object_id}, {"$push": {"changes": str(rChange.inserted_id)}})
 		print(f"Number of documents modified: {result.modified_count}")
 		return {"app_id": app_id, "message": "App deleted successfully."}
 	else:
@@ -113,8 +115,8 @@ async def updateAppById(app_id: str, payload: updateRequest) -> dict:
 		for change in payload.changes:
 			print("changeType - "+ change.type.name)
 			if change.type.name == "NAME":
-				result = collection.update_one({"_id": object_id}, {"$set": {"name": change.value}})
-			
+				#result = collection.update_one({"_id": object_id}, {"$set": {"name": change.value}})
+				print("ok")
 			else:
 				raise IcException(statusCode=400, messageDetail="Operation not valid")
 					
@@ -122,3 +124,20 @@ async def updateAppById(app_id: str, payload: updateRequest) -> dict:
 		return {"app_id": app_id, "updated_data": changeType, "message": "App updated successfully."}
 	else:
 		raise IcException(statusCode=202, messageDetail=ERR_02)
+
+async def newApplication(payload: appDetailsRequest) -> dict:
+	print("Creating new application: name=%s, url=%s", payload.data.name, payload.data.url)
+	db = connect_to_mongodb()
+	collection = db[os.getenv("MONGODB_COLLECTION")]
+	collectionImages = db[os.getenv("MONGODB_COLLECTION_IMAGES")]
+	collectionChanges = db[os.getenv("MONGODB_COLLECTION_CHANGES")]
+	result = collection.insert_one({"url": payload.data.url, "name": payload.data.name, "description": payload.data.description, "active":True, "images": [], "changes": []})
+	print("Application created successfully: application_id=%s", result.inserted_id)
+
+	for image in payload.data.images:
+		rImage = collectionImages.insert_one({"applicationId": str(result.inserted_id), "url": image.url, "type":image.type, "datetime": datetime.utcnow()})
+		rChange = collectionChanges.insert_one({"applicationId": str(result.inserted_id), "changeType": "new", "datetime": datetime.utcnow(), "description": "add new App "+ payload.data.name})
+
+		collection.update_one({"_id": result.inserted_id}, {"$push": {"images": str(rImage.inserted_id)}})
+		collection.update_one({"_id": result.inserted_id}, {"$push": {"changes": str(rChange.inserted_id)}})
+		return { "statusCode": "000" }
