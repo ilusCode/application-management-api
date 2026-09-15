@@ -28,5 +28,4 @@ async def update_app(app_id: str, payload: updateRequest) -> dict:
 async def new_application(payload: appDetailsRequest) -> dict:
     return await newApplication(payload)
 
-
 app.include_router(prefix_router)
