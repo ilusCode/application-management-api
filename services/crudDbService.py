@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from functools import lru_cache
 
 from pymongo import MongoClient
@@ -9,6 +10,9 @@ from transform.transformModel import transform_data, transform_data_details
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
 from exception.IcException import IcException
+from utils.Constants import ERR_01, ERR_02
+from model.UpdateRequest import updateRequest
+from model.changeType import changeType
 
 load_dotenv()
 
@@ -19,31 +23,102 @@ def connect_to_mongodb():
 	client = MongoClient(uri)
 	return client[database_name]
 
-def getAppList() -> appList:
+async def getAppList(status: str = None) -> appList:
 	db = connect_to_mongodb()
 	collection = db[os.getenv("MONGODB_COLLECTION")]
-	result = list(collection.find())
-	if result is None:
-		raise IcException("Application not found")
+	if status == "inactive":
+		query = {"active": False}
+	else:
+		query = {"active": True}
+	
+	result = list(collection.find(query))
 	data = transform_data(result)
 	return appList(data)
 
-def getAppDetailsById(app_id: str) -> appDetails:
+async def getAppDetailsById(app_id: str) -> appDetails:
+	try:
+		object_id = ObjectId(app_id)
+	except (InvalidId, TypeError):
+		raise IcException(statusCode=400, messageDetail=ERR_01)
+
+	db = connect_to_mongodb()
+	collection = db[os.getenv("MONGODB_COLLECTION")]
+	collectionImages = db[os.getenv("MONGODB_COLLECTION_IMAGES")]
+	collectionChanges = db[os.getenv("MONGODB_COLLECTION_CHANGES")]
+	rData = collection.find_one({"_id": object_id})
+
+	print(f"Retrieved application data: {rData}")
+
+	if rData is None:
+		raise IcException(statusCode=202, messageDetail=ERR_02)
+	
+	rImages = list(collectionImages.find({"applicationId": str(object_id)}))
+	rChanges = list(collectionChanges.find({"applicationId": str(object_id)}))
+
+	print(f"Retrieved application images: {rImages}")
+	print(f"Retrieved application changes: {rChanges}")
+
+	data = transform_data_details(rData, rImages, rChanges)
+	return appDetails(data)
+
+async def deleteAppById(app_id: str) -> dict:
 	if not app_id:
-		raise IcException("Invalid ID format")
+		raise IcException(statusCode=400, messageDetail=ERR_01)
 
 	try:
 		object_id = ObjectId(app_id)
 	except (InvalidId, TypeError):
-		raise IcException("Invalid ID format")
+		raise IcException(statusCode=400, messageDetail=ERR_01)
 
 	db = connect_to_mongodb()
 	collection = db[os.getenv("MONGODB_COLLECTION")]
-	result = collection.find_one({"_id": object_id})
+	collectionChanges = db[os.getenv("MONGODB_COLLECTION_CHANGES")]
 
-	if result is None:
-		raise IcException("Application not found")
+	print(f"Deleting application with ID: {app_id}")
 
-	data = transform_data_details(result)
-	return appDetails(data)
-	
+	query = {"active": True, "_id": object_id}
+
+	result = list(collection.find(query))
+	print(f"Number of active applications before deletion: {len(result)}")
+
+	if len(result) != 0:
+		result = collection.update_one({"_id": object_id}, {"$set": {"active": False}})
+		collectionChanges.insert_one({"applicationId": str(object_id), "changeType": "delete", "datetime": datetime.utcnow()})
+		print(f"Number of documents modified: {result.modified_count}")
+		return {"app_id": app_id, "message": "App deleted successfully."}
+	else:
+		raise IcException(statusCode=202, messageDetail=ERR_02)
+
+async def updateAppById(app_id: str, payload: updateRequest) -> dict:
+	if not app_id:
+		raise IcException(statusCode=400, messageDetail=ERR_01)
+
+	try:
+		object_id = ObjectId(app_id)
+	except (InvalidId, TypeError):
+		raise IcException(statusCode=400, messageDetail=ERR_01)
+
+	db = connect_to_mongodb()
+	collection = db[os.getenv("MONGODB_COLLECTION")]
+	collectionChanges = db[os.getenv("MONGODB_COLLECTION_CHANGES")]
+
+	print(f"Updating application with ID: {app_id} and data: {payload}")
+
+	query = {"_id": object_id}
+
+	result = list(collection.find(query))
+	print(f"Number of applications before update: {len(result)}")
+
+	if len(result) != 0:
+		for change in payload.changes:
+			print("changeType - "+ change.type.name)
+			if change.type.name == "NAME":
+				result = collection.update_one({"_id": object_id}, {"$set": {"name": change.value}})
+			
+			else:
+				raise IcException(statusCode=400, messageDetail="Operation not valid")
+					
+		print(f"Number of documents modified: {result.modified_count}")
+		return {"app_id": app_id, "updated_data": changeType, "message": "App updated successfully."}
+	else:
+		raise IcException(statusCode=202, messageDetail=ERR_02)
