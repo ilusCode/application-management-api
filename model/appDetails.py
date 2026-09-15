@@ -3,4 +3,4 @@ from model.dataAppDetails import dataAppDetails
 
 @dataclass
 class appDetails:
-    data: dataAppDetails = dataAppDetails()
+    data: dataAppDetails
