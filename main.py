@@ -1,8 +1,9 @@
 from fastapi import FastAPI, APIRouter
-from services.crudDbService import getAppList, getAppDetailsById, deleteAppById, updateAppById
+from services.crudDbService import getAppList, getAppDetailsById, deleteAppById, updateAppById, newApplication
 from model.appList import appList
 from model.appDetails import appDetails
 from model.UpdateRequest import updateRequest
+from model.appDetailsRequest import appDetailsRequest
 
 app = FastAPI()
 prefix_router = APIRouter(prefix="/api/v1")
@@ -22,5 +23,10 @@ async def delete_app(app_id: str) -> dict:
 @prefix_router.put("/apps/{app_id}")
 async def update_app(app_id: str, payload: updateRequest) -> dict:
     return await updateAppById(app_id, payload)
+
+@prefix_router.post("/apps/{app_id}/new")
+async def new_application(payload: appDetailsRequest) -> dict:
+    return await newApplication(payload)
+
 
 app.include_router(prefix_router)
