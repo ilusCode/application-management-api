@@ -11,10 +11,8 @@ from bson.objectid import ObjectId
 from bson.errors import InvalidId
 from exception.IcException import IcException
 from utils.Constants import ERR_01, ERR_02
-from model.UpdateRequest import updateRequest
-from model.changeType import changeType
 from model.appDetailsRequest import appDetailsRequest
-
+from model.serviceStatusEnum import serviceStatus
 load_dotenv()
 
 @lru_cache(maxsize=1)
@@ -27,7 +25,7 @@ def connect_to_mongodb():
 async def getAppList(status: str = None) -> appList:
 	db = connect_to_mongodb()
 	collection = db[os.getenv("MONGODB_COLLECTION")]
-	if status == "inactive":
+	if status == serviceStatus.INACTIVE:
 		query = {"active": False}
 	else:
 		query = {"active": True}
