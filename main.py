@@ -1,5 +1,5 @@
 from fastapi import FastAPI, APIRouter, Depends
-from services.crudDbService import getAppList, getAppDetailsById, deleteAppById, newApplication
+from services.managerService import getAppList, getAppDetailsById, deleteAppById, newApplication
 from model.appList import appList
 from model.appDetails import appDetails
 from model.appDetailsRequest import appDetailsRequest
