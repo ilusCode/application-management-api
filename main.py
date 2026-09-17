@@ -5,7 +5,7 @@ from model.appDetails import appDetails
 from model.appDetailsRequest import appDetailsRequest
 from model.requestStructure import requestStructure
 
-app = FastAPI()
+app = FastAPI(version="1.0.0")
 prefix_router = APIRouter(prefix="/api/v1",tags=["Apps"])
 
 @prefix_router.get("/apps")
