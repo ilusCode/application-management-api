@@ -6,7 +6,7 @@ from model.appDetailsRequest import appDetailsRequest
 from model.requestStructure import requestStructure
 
 app = FastAPI()
-prefix_router = APIRouter(prefix="/api/v1")
+prefix_router = APIRouter(prefix="/api/v1",tags=["Apps"])
 
 @prefix_router.get("/apps")
 async def get_apps(requestStructure: requestStructure = Depends()) -> appList:
