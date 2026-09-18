@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from model.dataAppDetails import dataAppDetails
+from app.model.dataAppDetails import dataAppDetails
 
 @dataclass
 class appDetails:

@@ -10,13 +10,13 @@ from bson.objectid import ObjectId
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-from exception.IcException import IcException
-from model.appDetails import appDetails
-from model.appDetailsRequest import appDetailsRequest
-from model.appList import appList
-from model.serviceStatusEnum import serviceStatus
-from transform.transformModel import transform_data, transform_data_details
-from utils.Constants import ERR_01, ERR_02
+from app.exception.IcException import IcException
+from app.model.appDetails import appDetails
+from app.model.appDetailsRequest import appDetailsRequest
+from app.model.appList import appList
+from app.model.serviceStatusEnum import serviceStatus
+from app.transform.transformModel import transform_data, transform_data_details
+from app.utils.Constants import ERR_01, ERR_02
 
 
 load_dotenv()

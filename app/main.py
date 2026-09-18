@@ -1,9 +1,9 @@
 from fastapi import FastAPI, APIRouter, Depends
-from services.managerService import getAppList, getAppDetailsById, deleteAppById, newApplication
-from model.appList import appList
-from model.appDetails import appDetails
-from model.appDetailsRequest import appDetailsRequest
-from model.requestStructure import requestStructure
+from app.services.managerService import getAppList, getAppDetailsById, deleteAppById, newApplication
+from app.model.appList import appList
+from app.model.appDetails import appDetails
+from app.model.appDetailsRequest import appDetailsRequest
+from app.model.requestStructure import requestStructure
 
 app = FastAPI(version="1.0.0")
 prefix_router = APIRouter(prefix="/api/v1",tags=["Apps"])

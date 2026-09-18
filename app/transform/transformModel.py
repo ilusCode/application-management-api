@@ -1,5 +1,5 @@
-from model.dataApp import dataApp
-from model.dataAppDetails import dataAppDetails
+from app.model.dataApp import dataApp
+from app.model.dataAppDetails import dataAppDetails
 
 
 def transform_data_details(rData: dict, lImages: list, lChanges: list) -> dataAppDetails:

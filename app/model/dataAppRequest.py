@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List
-from model.change import change
-from model.newImage import newImage
+from app.model.change import change
+from app.model.newImage import newImage
 
 @dataclass
 class dataAppRequest:
