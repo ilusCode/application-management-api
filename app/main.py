@@ -23,7 +23,7 @@ async def read_app_details(app_id: str) -> appDetails:
 async def delete_app(app_id: str) -> dict:
     return await deleteAppById(app_id)
 
-@prefix_router.post("/apps/{app_id}/new")
+@prefix_router.post("/app/new")
 async def new_application(payload: appDetailsRequest) -> dict:
     return await newApplication(payload)
 
