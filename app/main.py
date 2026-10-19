@@ -10,14 +10,15 @@ app = FastAPI(version="1.0.0",
     docs_url=None,
     redoc_url=None,
     openapi_url=None)
-prefix_router = APIRouter(prefix="/api/v1",tags=["Apps"])
-prefix_router.add_middleware(
+app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"]
 )
+prefix_router = APIRouter(prefix="/api/v1",tags=["Apps"])
+
 
 @prefix_router.get("/apps")
 async def get_apps(requestStructure: requestStructure = Depends()) -> appList:
