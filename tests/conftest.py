@@ -2,28 +2,22 @@ import mongomock
 import pytest
 from fastapi.testclient import TestClient
 
+from app.db.mongodb import Collections, get_collections
 from app.main import app
-from app.services import managerService
-
-COLLECTIONS = {
-    "MONGODB_COLLECTION": "apps",
-    "MONGODB_COLLECTION_IMAGES": "images",
-    "MONGODB_COLLECTION_CHANGES": "changes",
-}
 
 
 @pytest.fixture
-def db(monkeypatch):
-    for variable, name in COLLECTIONS.items():
-        monkeypatch.setenv(variable, name)
+def collections():
     database = mongomock.MongoClient()["test"]
-    monkeypatch.setattr(managerService, "connect_to_mongodb", lambda: database)
-    return database
+    return Collections(apps=database.apps, images=database.images, changes=database.changes)
 
 
 @pytest.fixture
-def client(db):
-    return TestClient(app)
+def client(collections):
+    app.dependency_overrides[get_collections] = lambda: collections
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture

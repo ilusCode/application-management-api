@@ -1,39 +1,48 @@
-from fastapi import FastAPI, APIRouter, Depends
-from app.services.managerService import getAppList, getAppDetailsById, deleteAppById, newApplication
-from app.model.appList import appList
-from app.model.appDetails import appDetails
-from app.model.appDetailsRequest import appDetailsRequest
-from app.model.requestStructure import requestStructure
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-app = FastAPI(version="1.0.0",
-    docs_url=None,
-    redoc_url=None,
-    openapi_url=None)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"]
-)
-prefix_router = APIRouter(prefix="/api/v1",tags=["Apps"])
+from app.api.v1.router import api_router
+from app.core.exceptions import AppAlreadyInactiveError, AppError, AppNotFoundError, InvalidIdError
+from app.db.mongodb import close_client
+
+ERROR_STATUS_CODES = {
+    InvalidIdError: 400,
+    AppNotFoundError: 404,
+    AppAlreadyInactiveError: 202,
+}
 
 
-@prefix_router.get("/apps")
-def get_apps(requestStructure: requestStructure = Depends()) -> appList:
-    return getAppList(status=requestStructure.status)
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    yield
+    close_client()
 
-@prefix_router.get("/apps/{app_id}/details")
-def read_app_details(app_id: str) -> appDetails:
-    return getAppDetailsById(app_id)
 
-@prefix_router.put("/apps/{app_id}")
-def delete_app(app_id: str) -> dict:
-    return deleteAppById(app_id)
+async def app_error_handler(_: Request, exc: AppError) -> JSONResponse:
+    return JSONResponse(status_code=ERROR_STATUS_CODES.get(type(exc), 400), content={"detail": str(exc)})
 
-@prefix_router.post("/app/new")
-def new_application(payload: appDetailsRequest) -> dict:
-    return newApplication(payload)
 
-app.include_router(prefix_router)
+def create_app() -> FastAPI:
+    application = FastAPI(
+        version="1.0.0",
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
+        lifespan=lifespan,
+    )
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    application.add_exception_handler(AppError, app_error_handler)
+    application.include_router(api_router)
+    return application
+
+
+app = create_app()
