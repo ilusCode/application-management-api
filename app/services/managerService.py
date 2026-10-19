@@ -16,7 +16,7 @@ from app.model.appDetailsRequest import appDetailsRequest
 from app.model.appList import appList
 from app.model.serviceStatusEnum import serviceStatus
 from app.transform.transformModel import transform_data, transform_data_details
-from app.utils.Constants import ERR_01, ERR_02
+from app.utils.Constants import ERR_01, ERR_02, ERR_03
 
 
 load_dotenv()
@@ -57,30 +57,32 @@ def connect_to_mongodb():
     return MongoClient(uri)[database_name]
 
 
-async def getAppList(status: Optional[serviceStatus] = None) -> appList:
+def getAppList(status: Optional[serviceStatus] = None) -> appList:
     collection = _collection(connect_to_mongodb(), "MONGODB_COLLECTION")
     active = status != serviceStatus.INACTIVE
     return appList(transform_data(collection.find({"active": active})))
 
 
-async def getAppDetailsById(app_id: str) -> appDetails:
+def getAppDetailsById(app_id: str) -> appDetails:
     object_id = _get_object_id(app_id)
     db = connect_to_mongodb()
     application = _collection(db, "MONGODB_COLLECTION").find_one({"_id": object_id})
     if application is None:
-        raise IcException(statusCode=202, messageDetail=ERR_02)
+        raise IcException(statusCode=404, messageDetail=ERR_03)
 
     images = list(_collection(db, "MONGODB_COLLECTION_IMAGES").find({"applicationId": str(object_id)}))
     changes = list(_collection(db, "MONGODB_COLLECTION_CHANGES").find({"applicationId": str(object_id)}))
     return appDetails(transform_data_details(application, images, changes))
 
 
-async def deleteAppById(app_id: str) -> dict:
+def deleteAppById(app_id: str) -> dict:
     object_id = _get_object_id(app_id)
     db = connect_to_mongodb()
     applications = _collection(db, "MONGODB_COLLECTION")
     result = applications.update_one({"_id": object_id, "active": True}, {"$set": {"active": False}})
-    if result.modified_count == 0:
+    if result.matched_count == 0:
+        if applications.count_documents({"_id": object_id}, limit=1) == 0:
+            raise IcException(statusCode=404, messageDetail=ERR_03)
         raise IcException(statusCode=202, messageDetail=ERR_02)
 
     change = _collection(db, "MONGODB_COLLECTION_CHANGES").insert_one(
@@ -96,7 +98,7 @@ async def deleteAppById(app_id: str) -> dict:
     return {"app_id": app_id, "message": "App deleted successfully."}
 
 
-async def newApplication(payload: appDetailsRequest) -> dict:
+def newApplication(payload: appDetailsRequest) -> dict:
     db = connect_to_mongodb()
     applications = _collection(db, "MONGODB_COLLECTION")
     images = _collection(db, "MONGODB_COLLECTION_IMAGES")

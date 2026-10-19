@@ -1,46 +1,47 @@
+from app.model.change import change
 from app.model.dataApp import dataApp
 from app.model.dataAppDetails import dataAppDetails
+from app.model.imageDetails import imageDetails
 
 
 def transform_data_details(rData: dict, lImages: list, lChanges: list) -> dataAppDetails:
-	new_images = []
-
-	for image in lImages:
-		image_data = {}
-		image_data['_id'] = str(image['_id'])
-		image_data['url'] = str(image['url'])
-		image_data['type'] = str(image['type'])
-		image_data['datetime'] = str(image['datetime'])
-		new_images.append(image_data)
-
-	new_changes = []
-	for change in lChanges:
-		change_data = {}
-		change_data['_id'] = str(change['_id'])
-		change_data['action'] = str(change['changeType'])
-		change_data['datetime'] = str(change['datetime'])
-		change_data['description'] = str(change['description'])
-		new_changes.append(change_data)
-
-	response = dataAppDetails(
-        _id=str(rData["_id"]),
-        url=rData["url"],
-        name=rData["name"],
-        description=rData["description"],
-        images=new_images,
-		changes=new_changes,
+	images = [
+		imageDetails(
+			_id=str(image["_id"]),
+			applicationId=str(image["applicationId"]),
+			url=str(image["url"]),
+			type=str(image["type"]),
+		)
+		for image in lImages
+	]
+	changes = [
+		change(
+			_id=str(item["_id"]),
+			applicationId=str(item["applicationId"]),
+			changeType=str(item["changeType"]),
+			datetime=str(item["datetime"]),
+			description=str(item["description"]),
+		)
+		for item in lChanges
+	]
+	return dataAppDetails(
+		_id=str(rData["_id"]),
+		url=rData["url"],
+		name=rData["name"],
+		description=rData["description"],
+		images=images,
 		active=rData["active"],
-    )
-	return response
+		changes=changes,
+	)
 
-def transform_data(rData:list) -> list:
-	dataApps = []
-	for item in rData:
-		dataApp_instance = dataApp(
+
+def transform_data(rData: list) -> list:
+	return [
+		dataApp(
 			_id=str(item["_id"]),
 			url=item["url"],
 			name=item["name"],
 			description=item["description"],
 		)
-		dataApps.append(dataApp_instance)
-	return dataApps
+		for item in rData
+	]
