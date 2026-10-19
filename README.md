@@ -7,25 +7,36 @@ A small REST API, built with [FastAPI](https://fastapi.tiangolo.com/) and MongoD
 - Python 3.14
 - FastAPI, served with `fastapi run` (Uvicorn)
 - MongoDB through `pymongo`
-- `python-dotenv` to load configuration from a `.env` file
+- `pydantic-settings` to load configuration from environment variables / `.env`
+- `pytest` + `mongomock` for tests, `ruff` for linting and formatting
 
 ## Project structure
 
 ```
 app/
-├── main.py                  # FastAPI app and route definitions (/api/v1)
-├── services/managerService.py  # Business logic and MongoDB access
-├── transform/transformModel.py # Converts Mongo documents to response models
-├── model/                   # Request/response dataclasses and enums
-├── exception/IcException.py # HTTPException wrapper used for API errors
-└── utils/Constants.py       # Error messages
+├── main.py                 # App factory: middleware, exception handlers, routers
+├── api/v1/
+│   ├── router.py           # Mounts the v1 routers under /api/v1
+│   └── apps.py             # /apps endpoints (HTTP layer only)
+├── core/
+│   ├── config.py           # Settings (pydantic-settings)
+│   └── exceptions.py       # Domain errors, mapped to HTTP status codes in main.py
+├── db/mongodb.py           # MongoDB client and the get_collections dependency
+├── schemas/app.py          # Pydantic request/response models
+└── services/
+    ├── app_service.py      # Business logic
+    └── mappers.py          # MongoDB documents -> response models
+tests/                      # pytest suite (MongoDB replaced by mongomock)
+pyproject.toml              # Project metadata, pytest and ruff config
+requirements.txt / requirements-dev.txt
 Dockerfile
-requirements.txt
 ```
+
+Requests flow `api` → `services` → `db`. Endpoints receive the MongoDB collections through FastAPI's dependency injection (`Depends(get_collections)`), so tests override that dependency instead of patching modules.
 
 ## Configuration
 
-The service reads its settings from environment variables. For local development, put them in a `.env` file in the project root (`.env` is already in `.gitignore`):
+The service reads its settings from environment variables. For local development, copy `.env.example` to `.env` and adjust it (`.env` is already in `.gitignore`):
 
 ```dotenv
 MONGODB_USERNAME=admin
@@ -48,14 +59,15 @@ MONGODB_COLLECTION_CHANGES=changes
 | `MONGODB_COLLECTION_IMAGES` | Collection that stores application images |
 | `MONGODB_COLLECTION_CHANGES` | Collection that stores the change history |
 
-All of these are required. If one is missing, the request that needs it fails with a `RuntimeError`.
+All of these are required. If one is missing, the first request that reaches MongoDB fails with a pydantic `ValidationError` that names the missing setting.
 
 ## Running locally
 
 ```bash
 python3.14 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
+cp .env.example .env
 
 fastapi dev app/main.py --port 4000   # auto-reload
 # or
@@ -63,6 +75,16 @@ fastapi run app/main.py --port 4000
 ```
 
 The API is then available at `http://localhost:4000/api/v1`.
+
+## Tests and linting
+
+```bash
+pytest
+ruff check .
+ruff format .
+```
+
+The tests use `mongomock`, so they do not need a running MongoDB.
 
 ## Running with Docker
 
@@ -112,11 +134,11 @@ curl http://localhost:4000/api/v1/apps/665f.../details
     "name": "Example",
     "description": "Demo app",
     "images": [
-      { "_id": "6660...", "url": "https://example.com/logo.png", "type": "logo", "datetime": "2026-10-18 12:00:00" }
+      { "_id": "6660...", "applicationId": "665f...", "url": "https://example.com/logo.png", "type": "logo" }
     ],
     "active": true,
     "changes": [
-      { "_id": "6661...", "action": "new", "datetime": "2026-10-18 12:00:00", "description": "add new App Example" }
+      { "_id": "6661...", "applicationId": "665f...", "changeType": "new", "datetime": "2026-10-18 12:00:00", "description": "add new App Example" }
     ]
   }
 }
@@ -162,7 +184,8 @@ Errors come back in FastAPI's standard format, `{ "detail": "<message>" }`:
 | Status | Detail | When |
 | --- | --- | --- |
 | `400` | `Invalid ID format` | `app_id` is not a valid MongoDB ObjectId |
-| `202` | `Application is already inactive` | The application does not exist, or (on deactivate) is already inactive |
+| `404` | `Application not found` | No application has that `app_id` |
+| `202` | `Application is already inactive` | On deactivate, the application is already inactive |
 | `422` | Validation error | The request body or query parameters are invalid |
 
 ## Data model
