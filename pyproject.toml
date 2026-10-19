@@ -1,0 +1,19 @@
+[project]
+name = "application-management-api"
+version = "1.0.0"
+description = "REST API (FastAPI + MongoDB) to manage an application catalog"
+readme = "README.md"
+requires-python = ">=3.9"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["error::UserWarning"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "B", "UP"]
+# FastAPI usa Depends() como valor por defecto; Optional/List mantienen compatibilidad con 3.9.
+ignore = ["B008", "UP006", "UP007", "UP035", "UP045"]
