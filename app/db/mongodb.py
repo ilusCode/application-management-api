@@ -27,7 +27,7 @@ def get_collections() -> Collections:
     settings = get_settings()
     db = get_client()[settings.mongodb_database]
     return Collections(
-        apps=db[settings.mongodb_collection],
+        apps=db[settings.mongodb_collection_applications],
         images=db[settings.mongodb_collection_images],
         changes=db[settings.mongodb_collection_changes],
     )

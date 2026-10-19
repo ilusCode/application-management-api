@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     mongodb_host: str
     mongodb_port: int
     mongodb_database: str
-    mongodb_collection: str
+    mongodb_collection_applications: str
     mongodb_collection_images: str
     mongodb_collection_changes: str
 

@@ -45,7 +45,7 @@ MONGODB_HOST=localhost
 MONGODB_PORT=27017
 MONGODB_DATABASE=app_management
 
-MONGODB_COLLECTION=applications
+MONGODB_COLLECTION_APPLICATIONS=applications
 MONGODB_COLLECTION_IMAGES=images
 MONGODB_COLLECTION_CHANGES=changes
 ```
@@ -55,7 +55,7 @@ MONGODB_COLLECTION_CHANGES=changes
 | `MONGODB_USERNAME` / `MONGODB_PASSWORD` | MongoDB credentials (URL-encoded automatically) |
 | `MONGODB_HOST` / `MONGODB_PORT` | MongoDB host and port (the client connects with `directConnection=true`) |
 | `MONGODB_DATABASE` | Database name |
-| `MONGODB_COLLECTION` | Collection that stores applications |
+| `MONGODB_COLLECTION_APPLICATIONS` | Collection that stores applications |
 | `MONGODB_COLLECTION_IMAGES` | Collection that stores application images |
 | `MONGODB_COLLECTION_CHANGES` | Collection that stores the change history |
 

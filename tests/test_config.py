@@ -9,7 +9,7 @@ ENV = {
     "MONGODB_HOST": "localhost",
     "MONGODB_PORT": "27017",
     "MONGODB_DATABASE": "db",
-    "MONGODB_COLLECTION": "apps",
+    "MONGODB_COLLECTION_APPLICATIONS": "apps",
     "MONGODB_COLLECTION_IMAGES": "images",
     "MONGODB_COLLECTION_CHANGES": "changes",
 }
