@@ -21,19 +21,19 @@ prefix_router = APIRouter(prefix="/api/v1",tags=["Apps"])
 
 
 @prefix_router.get("/apps")
-async def get_apps(requestStructure: requestStructure = Depends()) -> appList:
-    return await getAppList(status=requestStructure.status.name)
+def get_apps(requestStructure: requestStructure = Depends()) -> appList:
+    return getAppList(status=requestStructure.status)
 
 @prefix_router.get("/apps/{app_id}/details")
-async def read_app_details(app_id: str) -> appDetails:
-    return await getAppDetailsById(app_id)
+def read_app_details(app_id: str) -> appDetails:
+    return getAppDetailsById(app_id)
 
 @prefix_router.put("/apps/{app_id}")
-async def delete_app(app_id: str) -> dict:
-    return await deleteAppById(app_id)
+def delete_app(app_id: str) -> dict:
+    return deleteAppById(app_id)
 
 @prefix_router.post("/app/new")
-async def new_application(payload: appDetailsRequest) -> dict:
-    return await newApplication(payload)
+def new_application(payload: appDetailsRequest) -> dict:
+    return newApplication(payload)
 
 app.include_router(prefix_router)
