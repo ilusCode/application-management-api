@@ -17,13 +17,14 @@ class Settings(BaseSettings):
     mongodb_collection_applications: str
     mongodb_collection_images: str
     mongodb_collection_changes: str
-
+    mongodb_auth_source: str
     @property
     def mongodb_uri(self) -> str:
         return (
             f"mongodb://{quote_plus(self.mongodb_username)}:{quote_plus(self.mongodb_password)}"
             f"@{self.mongodb_host}:{self.mongodb_port}/"
-            "?directConnection=true&serverSelectionTimeoutMS=2000&appName=application-management-api"
+            f"?authSource={quote_plus(self.mongodb_auth_source)}"
+            "&directConnection=true&serverSelectionTimeoutMS=2000&appName=application-management-api"
         )
 
 
