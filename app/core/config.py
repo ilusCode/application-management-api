@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     mongodb_collection_images: str
     mongodb_collection_changes: str
     mongodb_auth_source: str
+
     @property
     def mongodb_uri(self) -> str:
         return (
