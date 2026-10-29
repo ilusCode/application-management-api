@@ -12,6 +12,7 @@ ENV = {
     "MONGODB_COLLECTION_APPLICATIONS": "apps",
     "MONGODB_COLLECTION_IMAGES": "images",
     "MONGODB_COLLECTION_CHANGES": "changes",
+    "MONGODB_AUTH_SOURCE": "admin db",
 }
 
 
@@ -29,4 +30,4 @@ def test_settings_codifica_credenciales_en_la_uri(monkeypatch):
 
     settings = Settings(_env_file=None)
 
-    assert settings.mongodb_uri.startswith("mongodb://user%40x:p%3Ass%2Fword@localhost:27017/?")
+    assert settings.mongodb_uri.startswith("mongodb://user%40x:p%3Ass%2Fword@localhost:27017/?authSource=admin+db&")
