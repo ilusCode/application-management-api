@@ -1,6 +1,10 @@
 # Entorno
 .venv/
 .env
+.env.*
+.env-*
+config/.env-local
+!.env.example
 
 # Python
 __pycache__/
